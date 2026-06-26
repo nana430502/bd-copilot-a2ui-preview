@@ -1,0 +1,39 @@
+name: Fix index CSS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index CSS
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('.on{background:#0f766e}', 'nav button.on{background:#0f766e}')
+          s = s.replace('main{padding:22px}', 'main{padding:22px;display:flex;justify-content:center;align-items:flex-start}')
+          s = s.replace('.phone{max-width:960px;margin:auto;background:#fff;border:12px solid #111827;border-radius:28px;overflow:hidden}', '.phone{width:430px;max-width:calc(100vw - 32px);margin:auto;background:#fff;border:10px solid #111827;border-radius:36px;overflow:hidden;box-shadow:0 24px 70px #64748b55}')
+          s = s.replace('@media(max-width:720px){.app{display:block}main{padding:8px}.phone{border-width:7px}', '@media(max-width:720px){.app{display:block}main{padding:8px}.phone{max-width:calc(100vw - 20px);border-width:7px;border-radius:28px}')
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit fix if changed
+        run: |
+          if ! git diff --quiet -- index.html; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add index.html
+            git commit -m "Fix preview iPhone frame and active styles"
+            git push
+          else
+            echo "No index.html changes needed"
+          fi
